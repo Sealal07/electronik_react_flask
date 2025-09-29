@@ -29,56 +29,66 @@ export const AuthProvider = ({ children }) => {
     }, [token]);
 
     useEffect(() => {
-        const checkAuth = async () => {
-            if (token) {
-                try {
-                    const response = await axios.get('http://localhost:5000/api/profile');
-                    setUser(response.data.user);
-                } catch (error) {
-                    console.log('auth failed', error);
-                    logout();
-                }
-            }
+    const checkAuth = async () => {
+        if (!token) {
             setLoading(false);
-        };
-        checkAuth();
-    }, [token]);
+            return;
+        }
+
+        try {
+            console.log('Checking auth with token:', token.substring(0, 20) + '...');
+            const response = await axios.get('http://localhost:5000/api/profile');
+            console.log('Auth successful:', response.data.user);
+            setUser(response.data.user);
+        } catch (error) {
+            console.log('Auth check failed:', error.response?.status, error.response?.data);
+            logout();
+        }
+        setLoading(false);
+    };
+
+    checkAuth();
+}, [token]);
 
     const login = async (email, password) => {
-        try {
-            const response = await axios.post('http://localhost:5000/api/login', {
-                email, password
-            });
-            const { access_token, user } = response.data;
-            setToken(access_token);
-            setUser(user);
-            return { 'success': true };
-        } catch (error) {
-            return {
-                'success': false,
-                error: 'ошибка авторизации'
-            };
-        }
-    };
+    try {
+        const response = await axios.post('http://localhost:5000/api/login', {
+            email, password
+        });
+        const { access_token, user } = response.data;
+        setToken(access_token);
+        setUser(user);
+        return { 'success': true };
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Ошибка авторизации';
+        return {
+            'success': false,
+            error: errorMessage
+        };
+    }
+};
 
-    const register = async (userData) => {
-        try {
-            const response = await axios.post('http://localhost:5000/api/register', userData);
-            const { access_token, user } = response.data;
-            setToken(access_token);
-            setUser(user);
-            return { success: true };
-        } catch (error) {
-            return {
-                'success': false,
-                error: 'ошибка регистрации'
-            };
-        }
-    };
+const register = async (userData) => {
+    try {
+        const response = await axios.post('http://localhost:5000/api/register', userData);
+        const { access_token, user } = response.data;
+        setToken(access_token);
+        setUser(user);
+        return { success: true };
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Ошибка регистрации';
+        return {
+            'success': false,
+            error: errorMessage
+        };
+    }
+};
 
-    const logout = () => {
+    const logout = async () => {
         setToken(null);
         setUser(null);
+        delete axios.defaults.headers.common['Authorization'];
+        localStorage.removeItem('token');
     };
 
     const value = {

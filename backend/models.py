@@ -102,24 +102,6 @@ class User(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
-    def generate_auth_token(self, expires_in=3600):
-        return jwt.encode(
-            {'user_id': self.id, 'exp': time() + expires_in},
-            current_app.config['SECRET_KEY'],
-            algorithm='HS256'
-        )
-
-    @staticmethod
-    def verify_auth_token(token):
-        try:
-            data = jwt.decode(
-                token,
-                current_app.config['SECRET_KEY'],
-                algorithms=['HS256']
-            )
-            return User.query.get(data['user_id'])
-        except:
-            return None
 
 
 class Order(db.Model):
